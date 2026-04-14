@@ -22,6 +22,8 @@ export async function generateWeeklyMenu(
     include: { preferences: true, restrictions: true }
   })
 
+  console.log('allMembers:', allMembers.length)
+
   // 2. Cargar historial reciente (últimas 2 semanas) para evitar repetición
   const twoWeeksAgo = new Date()
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
@@ -39,6 +41,9 @@ export async function generateWeeklyMenu(
     include: { ingredients: true }
   })
 
+  console.log('allRecipes:', allRecipes.length)
+  console.log('recentRecipeIds:', recentRecipeIds.size)
+
   const result: { dayDate: Date; recipeId: string; memberIds: string[] }[] = []
   // Rastrear qué ingredientes ya se usaron esta semana para el bonus
   const weekIngredients = new Map<string, number>()
@@ -46,10 +51,14 @@ export async function generateWeeklyMenu(
   for (const day of days) {
     const presentMembers = allMembers.filter(m => day.memberIds.includes(m.id))
 
+    console.log(`Day ${day.date.toISOString()}, presentMembers: ${presentMembers.length}`)
+
     // 4. Obtener restricciones duras de los miembros presentes
     const hardRestrictions = new Set(
       presentMembers.flatMap(m => m.restrictions.map(r => r.type))
     )
+
+    console.log('hardRestrictions:', [...hardRestrictions])
 
     // 5. Filtrar recetas que cumplan restricciones duras
     const candidates = allRecipes.filter(recipe => {
@@ -58,9 +67,11 @@ export async function generateWeeklyMenu(
       // Eliminar si tiene tag incompatible con alguna restricción
       if (hardRestrictions.has('gluten_free') && !recipe.tags.includes('gluten_free')) return false
       if (hardRestrictions.has('vegetarian') && !recipe.tags.includes('vegetarian')) return false
-      if (hardRestrictions.has('lactose_free') && !recipe.tags.includes('lactose_free')) return false
+      if (hardRestrictions.has('lactose_free') && !recipe.tags.some(tag => tag === 'lactose_free' || tag === 'sin_lactosa')) return false
       return true
     })
+
+    console.log(`candidates: ${candidates.length}`)
 
     // 6. Puntuar cada candidata
     const scored: ScoredRecipe[] = candidates.map(recipe => {
@@ -87,11 +98,18 @@ export async function generateWeeklyMenu(
       return { recipe, score }
     })
 
+    console.log(`scored: ${scored.length}`)
+
     // 7. Elegir la de mayor score (con pequeño factor aleatorio para variedad)
     scored.sort((a, b) => (b.score + Math.random() * 0.3) - (a.score + Math.random() * 0.3))
     const chosen = scored[0]
 
-    if (!chosen) continue // fallback: no hay recetas disponibles
+    if (!chosen) {
+      console.log('No chosen recipe for day')
+      continue // fallback: no hay recetas disponibles
+    }
+
+    console.log('Chosen recipe:', chosen.recipe.name)
 
     // 8. Actualizar el mapa de ingredientes semanales
     for (const ri of chosen.recipe.ingredients) {

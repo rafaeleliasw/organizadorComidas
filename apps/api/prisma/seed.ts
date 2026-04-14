@@ -59,7 +59,7 @@ async function main() {
   ])
 
   // Mapa para acceder por nombre fácilmente
-  const ing = Object.fromEntries(ingredients.map(i => [i.name, i]))
+  const ing = Object.fromEntries(ingredients.map((i: { name: string; id: string }) => [i.name, i]))
 
   console.log(`✅ ${ingredients.length} ingredientes creados`)
 
@@ -326,7 +326,7 @@ async function main() {
         costEstimate: data.costEstimate,
         ingredients: {
           create: data.ingredients.map(i => ({
-            ingredientId: ing[i.name].id,
+            ingredient: { connect: { id: ing[i.name].id } },
             quantity: i.quantity,
             unit: i.unit
           }))

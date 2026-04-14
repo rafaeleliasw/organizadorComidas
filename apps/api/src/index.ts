@@ -21,7 +21,8 @@ const server = Fastify({ logger: true })
 // Plugins
 server.register(cors, {
   origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 })
 
 server.register(jwt, {

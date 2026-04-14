@@ -65,7 +65,7 @@ export default async function recipeRoutes(server: FastifyInstance) {
         // Upsert ingredientes (crear si no existen)
         const ingredientRecords = await Promise.all(
           ingredients.map(ing =>
-            tx.ingredient.upsert({
+            prisma.ingredient.upsert({
               where: { name: ing.name },
               update: {},
               create: { name: ing.name, category: ing.category, unit: ing.unit }
@@ -73,7 +73,7 @@ export default async function recipeRoutes(server: FastifyInstance) {
           )
         )
 
-        return tx.recipe.create({
+        return prisma.recipe.create({
           data: {
             name, prepMinutes, difficulty, recipeUrl, tags,
             costEstimate,

@@ -50,10 +50,10 @@ export default async function memberRoutes(server: FastifyInstance) {
 
       // Reemplazar preferencias y restricciones en una transacción
       const member = await prisma.$transaction(async (tx) => {
-        await tx.memberPreference.deleteMany({ where: { memberId } })
-        await tx.dietaryRestriction.deleteMany({ where: { memberId } })
+        await prisma.memberPreference.deleteMany({ where: { memberId } })
+        await prisma.dietaryRestriction.deleteMany({ where: { memberId } })
 
-        return tx.member.update({
+        return prisma.member.update({
           where: { id: memberId },
           data: {
             name,

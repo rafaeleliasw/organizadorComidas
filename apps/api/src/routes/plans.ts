@@ -40,6 +40,8 @@ export default async function planRoutes(server: FastifyInstance) {
     async (req, reply) => {
       const { familyId, weekStart, days } = req.body
 
+      req.log.info('Generate plan request: ' + JSON.stringify({ familyId, weekStart, days }))
+
       // Correr el algoritmo
       const menuDays = await generateWeeklyMenu(
         familyId,
@@ -49,9 +51,11 @@ export default async function planRoutes(server: FastifyInstance) {
         }))
       )
 
+      req.log.info('Generated menuDays: ' + JSON.stringify(menuDays))
+
       // Guardar el plan en BD dentro de una transacción
       const plan = await prisma.$transaction(async (tx) => {
-        const newPlan = await tx.weeklyPlan.create({
+        const newPlan = await prisma.weeklyPlan.create({
           data: {
             familyId,
             weekStart: new Date(weekStart),
@@ -60,7 +64,7 @@ export default async function planRoutes(server: FastifyInstance) {
         })
 
         for (const day of menuDays) {
-          const planDay = await tx.planDay.create({
+          const planDay = await prisma.planDay.create({
             data: {
               planId: newPlan.id,
               dayDate: day.dayDate,
